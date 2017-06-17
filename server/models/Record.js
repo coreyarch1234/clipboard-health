@@ -4,15 +4,15 @@ const Schema = mongoose.Schema;
 
 const Record = new Schema({
   location: {
-    lat: Number,
-    lng: Number,
+    lat: {type: Number, required: false},
+    lng: {type: Number, required: false},
   },
   education: String,
   salary: Number,
   experience: Number,
   department: String,
   patientNurseRatio: Number,
-  createdAt: Date,
+  createdAt: { type: Date, default: Date() }
 });
 
 export default mongoose.model('records', Record);

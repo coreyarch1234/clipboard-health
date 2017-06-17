@@ -6,7 +6,10 @@ import Main from '../layouts/Main';
 const Index = () => (
   <Main>
     <div className="col-sm-12" id="index">
-      <h1> Test </h1>
+
+    </div>
+    <div className="col-sm-12" id="profile">
+
     </div>
   </Main>
 );

@@ -62,7 +62,7 @@ def main():
         patientNurseRatio = nurse_info_list[6][list_of_questions[6]][nurse]
 
         if type(salary) != int:
-            salary = 0 #default, will change later
+            salary = 20 #default, will change later
         if type(experience) != int:
             experience = 0 #default, will change later
         if type(patientNurseRatio) != int:
@@ -75,7 +75,7 @@ def main():
             "department": department,
             "patientNurseRatio": patientNurseRatio
         }
-        
+
         record_coll.insert(doc)
 
 if __name__ == "__main__":

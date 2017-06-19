@@ -13,6 +13,9 @@ import Profile from './Profile';
 
 // All of our CSS
 require('../../public/css/main.scss');
+var d3 = require("d3");
+var salaryArray = [];
+
 
 ReactDOM.render(
   <Router>
@@ -29,7 +32,7 @@ class Nurse extends React.Component { //Use for state
     //Constructor
     state = { //You want to be able to update this data
         // education: "",
-        // salary: null,
+        salaryArr: [],
         // experience: null,
         // department: "",
         // patientNurseRatio: null
@@ -38,32 +41,59 @@ class Nurse extends React.Component { //Use for state
     componentDidMount(){
         axios.get('api/records')
         .then(resp => {
+            for (var i = 0; i < resp.data.records.length; i++){
+                this.state.salaryArr.push(resp.data.records[i]["salary"])
+            }
+            console.log(this.state.salaryArr);
+            salaryArray = this.state.salaryArr;
+            drawChart(salaryArray);
             this.setState({ //Once we populate react app with nurse info, change these fields
                 //use an ajax request
                 // education: "",
-                // salary: null,
+                // salaryArr: resp.data.records[5]["salary"],
                 // experience: null,
                 // department: "",
                 // patientNurseRatio: null
                 nurse_info: resp.data.records
             })
-            // console.log(resp.data.records);
         })
         .catch(console.error);
+
     };
+
+    shouldComponentUpdate() {
+
+        return false; // This prevents future re-renders of this component
+    }
     componentWillUnmount(){
 
     };
     render() {
         return(
             <div className= "Nurses text-center">
-                {this.state.nurse_info.map(nurse =>
-                    <Profile key={nurse.id} {...nurse} />
-                )};
+                <div className="chart"></div>
             </div>
+
         );
     };
 };
+
+function drawChart(arr) {
+    var x = d3.scaleLinear()
+        .domain([0, d3.max(arr)])
+        .range([0, 420]);
+
+    d3.select(".chart")
+      .selectAll("div")
+        .data(arr)
+      .enter().append("div")
+        .style("width", function(d) { return x(d) + "px"; })
+        .text(function(d) { return d; });
+};
+
+// {this.state.nurse_info.map(nurse =>
+//     <Profile key={nurse._id} {...nurse} />
+// )};
 
 ReactDOM.render(
     <Nurse/>,

@@ -1,5 +1,6 @@
 from os.path import join, dirname
 import csv
+import json
 import re
 import pandas as pd
 import numpy as np
@@ -48,21 +49,33 @@ def main():
     for column in range(17):
         df = pd.read_csv(join(dirname(__file__), '../data/projectnurse.csv'), chunksize=1)
         nurse_info_list.append(create_nurse_json(df, column, list_of_questions[column]))
-    # print int(filter(str.isdigit, re.findall("\d+\:+", nurse_info_list[6][list_of_questions[6]][35])[0]))
-    # print re.findall("\d+\:+", nurse_info_list[6][list_of_questions[6]][35])
-    # print nurse_info_list[6][list_of_questions[6]][35]
-    # record_coll.drop()
+
+    record_coll.drop()
 
     #Populate Records collection
     nurse_count = 347
     for nurse in range(nurse_count):
+        education = nurse_info_list[1][list_of_questions[1]][nurse]
+        salary = nurse_info_list[7][list_of_questions[7]][nurse]
+        experience = nurse_info_list[4][list_of_questions[4]][nurse]
+        department = nurse_info_list[2][list_of_questions[2]][nurse]
+        patientNurseRatio = nurse_info_list[6][list_of_questions[6]][nurse]
+
+        if type(salary) != int:
+            salary = 0 #default, will change later
+        if type(experience) != int:
+            experience = 0 #default, will change later
+        if type(patientNurseRatio) != int:
+            patientNurseRatio = 0 #default, will change later
+
         doc = {
-            "education": nurse_info_list[1][list_of_questions[1]][nurse],
-            "salary": nurse_info_list[7][list_of_questions[7]][nurse], #this will grab the float number from the salary
-            "experience": nurse_info_list[4][list_of_questions[4]][nurse],
-            "department": nurse_info_list[2][list_of_questions[2]][nurse],
-            "patientNurseRatio": nurse_info_list[6][list_of_questions[6]][nurse],
+            "education": education,
+            "salary": salary,
+            "experience": experience,
+            "department": department,
+            "patientNurseRatio": patientNurseRatio
         }
+        
         record_coll.insert(doc)
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@ export default {
   devtool: 'eval-source-map',
   entry: [
     'webpack-hot-middleware/client?path=//localhost:4783/__webpack_hmr&reload=true',
-    path.join(__dirname, '../app/entry.js'),
+    path.join(__dirname, '../app/components/Nurses.js'),
   ],
   output: {
     path: path.join(__dirname, '../dist/'),

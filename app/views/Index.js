@@ -8,9 +8,6 @@ const Index = () => (
     <div className="col-sm-12" id="index">
 
     </div>
-    <div className="col-sm-12" id="profile">
-
-    </div>
   </Main>
 );
 

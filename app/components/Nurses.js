@@ -9,6 +9,7 @@ import {
 
 import Index from '../views/Index';
 import NotFound from '../views/NotFound';
+import Profile from './Profile';
 
 // All of our CSS
 require('../../public/css/main.scss');
@@ -55,13 +56,10 @@ class Nurse extends React.Component { //Use for state
     };
     render() {
         return(
-            <div>
-                <p>Nurse Info</p>
-                // <p className = "text-center">Education: {this.state.education}</p>
-                // <p className = "text-center">Salary: ${this.state.salary}</p>
-                // <p className = "text-center">Experience: {this.state.experience}</p>
-                // <p className = "text-center">Department: {this.state.department}</p>
-                // <p className = "text-center">Patient Count Ratio: {this.state.patientNurseRatio}</p>
+            <div className= "Nurses text-center">
+                {this.state.nurse_info.map(nurse =>
+                    <Profile key={nurse.id} {...nurse} />
+                )};
             </div>
         );
     };
@@ -71,23 +69,3 @@ ReactDOM.render(
     <Nurse/>,
     document.getElementById('index')
 );
-
-
-// //React Component Profile
-// const Profile = (props) => {
-//     return(<h1 className = "text-center" style={{color}}> Nurse: {props.headerMessage}</h1>);
-// };
-//
-// //React Prop Validation
-// Profile.propTypes = {
-//     headerMessage: React.PropTypes.string
-// };
-//
-// Profile.defaultProps = {
-//     headerMessage: "Nurse A"
-// };
-//
-// ReactDOM.render(
-//     <Salary/>, //Salary Component
-//     document.getElementById('profile')
-// );

@@ -6,7 +6,6 @@ import Main from '../layouts/Main';
 const Index = () => (
   <Main>
     <div className="col-sm-12" id="index">
-
     </div>
   </Main>
 );

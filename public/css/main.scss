@@ -7,13 +7,35 @@
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
 
 // Components
-.chart div {
+.chart > div {
   font: 10px sans-serif;
   background-color: steelblue;
   text-align: right;
   padding: 3px;
   margin: 1px;
   color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 10em;
 }
 
+// .chart > div:first-child{
+//     display: flex;
+//     justify-content: flex-start;
+// }
+//
+.ratio {
+    display: flex;
+    flex: 0;
+}
+.value {
+    display: flex;
+    flex: 0;
+}
+//
+// .value {
+//     justify-content: flex-end;
+// }
 // Views

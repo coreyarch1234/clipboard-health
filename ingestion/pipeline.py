@@ -53,13 +53,13 @@ def main():
     data_frame = data_frame.fillna('')
 
     # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
-    nurse_first, nurse_last = 80, 100
-    data_frame = data_frame[nurse_first:nurse_last]
+    # nurse_first, nurse_last = 80, 100
+    # data_frame = data_frame[nurse_first:nurse_last]
 
     # Explore the data frame
     # print data_frame
-    print type(data_frame)
-    print data_frame.shape
+    # print type(data_frame)
+    # print data_frame.shape
     # print data_frame["Department"]
     # print data_frame[:10]
     # print data_frame["Department"][:10]
@@ -109,7 +109,7 @@ def main():
     # nurse_count = data_frame.shape[0]
     # for nurse in range(nurse_count):
     # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
-    for nurse in range(nurse_first, nurse_last):
+    for nurse in range(nurse_count):
         string = ratios[nurse]
         # print "Ratio string:", repr(string), type(string)
         number = 0  # default value
@@ -159,10 +159,10 @@ def main():
     # print "ratios_clean length: " + str(len(ratios_clean))
 
     #Populate Records collection
-    # nurse_count = data_frame.shape[0]
+    nurse_count = data_frame.shape[0]
     # for nurse in range(nurse_count):
     # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
-    for nurse in range(nurse_first, nurse_last):
+    for nurse in range(nurse_count):
         # print nurse
         education = data_frame[questions["education"]][nurse]
         salary = data_frame[questions["salary"]][nurse]
@@ -172,10 +172,10 @@ def main():
 
         # TODO: write comments
         if not isinstance(salary, int):
-            salary = 20 #default, will change later
+            salary = 0 #default, will change later
         if not isinstance(experience, int):
             experience = 0 #default, will change later
-        if not isinstance(patientNurseRatio, int):
+        if not isinstance(patientNurseRatio, float):
             patientNurseRatio = 0 #default, will change later
 
         doc = {

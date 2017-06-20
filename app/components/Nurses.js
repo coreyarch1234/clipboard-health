@@ -14,7 +14,10 @@ import Profile from './Profile';
 // All of our CSS
 require('../../public/css/main.scss');
 var d3 = require("d3");
-var salaryArray = [];
+var patientNurseRatioArray = [];
+var binsArrayRatio = [];
+var binsArrayValueArray = [];
+var binValueArray = [];
 
 
 ReactDOM.render(
@@ -32,21 +35,52 @@ class Nurse extends React.Component { //Use for state
     //Constructor
     state = { //You want to be able to update this data
         // education: "",
-        salaryArr: [],
+        // salaryArr: [],
         // experience: null,
         // department: "",
-        // patientNurseRatio: null
+        patientNurseRatioArr: [],
         nurse_info: []
     };
     componentDidMount(){
-        axios.get('api/records') //Just query salary
+        axios.get('api/records') //Just query ratio
         .then(resp => {
             for (var i = 0; i < resp.data.records.length; i++){
-                this.state.salaryArr.push(resp.data.records[i]["salary"])
+                this.state.patientNurseRatioArr.push(resp.data.records[i]["patientNurseRatio"])
             }
-            console.log(this.state.salaryArr);
-            salaryArray = this.state.salaryArr;
-            drawChart(salaryArray);
+            // console.log(this.state.patientNurseRatioArr);
+            patientNurseRatioArray = this.state.patientNurseRatioArr;
+
+            console.log(typeof patientNurseRatioArray[0]);
+
+            // sort by number of patients
+            patientNurseRatioArray = patientNurseRatioArray.sort(function(a, b) {
+              return a - b;
+            })
+
+            var bins = {};
+            var binsArrayValue = [];
+            // var binsArrayRatio = [];
+
+            for (var i = 0; i < patientNurseRatioArray.length; i++) {
+                var ratio = Math.round(patientNurseRatioArray[i]);
+                if (bins[ratio] === undefined) {
+                    bins[ratio] = 1
+                } else {
+                    bins[ratio] += 1
+                }
+            }
+
+            for (var key in bins) {
+                var value = bins[key];
+                binsArrayRatio.push(key);
+                binsArrayValue.push({ratio: key, value: value});
+                binValueArray.push(value);
+            }
+
+            console.log(binsArrayValue);
+
+            drawChart(binsArrayValue);
+            // drawChart(patientNurseRatioArray);
             this.setState({ //Once we populate react app with nurse info, change these fields
                 //use an ajax request
                 // education: "",
@@ -71,24 +105,72 @@ class Nurse extends React.Component { //Use for state
     render() {
         return(
             <div className= "Nurses text-center">
-                <div className="chart"></div>
+                <div className="chart">Hello</div>
             </div>
 
         );
     };
 };
 
-function drawChart(arr) {
+//Histogram
+function drawHist(arr) {
     var x = d3.scaleLinear()
-        .domain([0, d3.max(arr)])
-        .range([0, 420]);
+        .rangeRound([0, 347])
+    // var bins = d3.histogram()
+        .domain(x.domain())
+        .thresholds(x.ticks(20))
+        (arr);
+    // console.log(bins)
 
-    d3.select(".chart")
-      .selectAll("div")
+};
+
+function drawChart(arr) {
+    var barPadding = 1;
+    var x = d3.scaleLinear()
+        .domain([0, d3.max(binValueArray)])
+        .range([0, 100]);
+
+    console.log(x)
+    // var bar = d3.select(".chart")
+    //     .selectAll("div")
+    //     .data(arr)
+    //     .enter().append("div")
+    //     .style("width", function(d) { return x(d)*1 + "em"; })
+    //     .text(function(d) { return d; });
+
+    var bar = d3.select(".chart")
+        .selectAll("div")
         .data(arr)
-      .enter().append("div")
-        .style("width", function(d) { return x(d) + "px"; })
-        .text(function(d) { return d; });
+        .enter().append("div")
+        .style("width", function(d) {
+            console.log(d);
+            console.log(d.value);
+            var v = x(Number(d.value)) + "em";
+            console.log(v);
+            return v;
+        })
+        // .text(function(d) { return d; });
+;
+
+    // bar.selectAll("text")
+    //    .data(arr)
+    //    .enter()
+    //    .append("text")
+
+    bar.append("div")
+        .attr("class", "ratio")
+        .text(function(d) { return d.ratio })
+        // .attr("class", "value")
+        // .text(function(d) { return d.value });
+    bar.append("div")
+        .attr("class", "value")
+        .text(function(d) { return d.value});
+
+    // bar.append("text")
+    //       .attr("x", function(d) { return x(d) - 3; })
+    //       .attr("y", barHeight / 2)
+    //       .attr("dy", ".35em")
+    //       .text(function(d, i) { return binsArrayRatio[i]; });
 };
 
 ReactDOM.render(

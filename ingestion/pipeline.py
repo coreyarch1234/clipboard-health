@@ -39,11 +39,37 @@ def create_nurse_json(csv, column, question_key):
     return nurse_questions_dict
 
 def main():
+    # Setup the database
     client = MongoClient('mongodb://localhost:27017/')
     db = client['clipboardinterview']
     record_coll = db['records'] #change collection to nurses
+    record_coll.drop()
 
-    #Create JSON of nurse info
+    #This will be my nurse JSON. Is a list of dictionaries. The keys are the questions (i.e. - salary?) and the values are
+    # are dictionaries where the keys are incremental indices (0,1,..) and the values are the answers to the question for each nurse.
+    data_frame = pd.read_csv(join(dirname(__file__), '../data/projectnurse.csv'))
+
+    # Replace all NaNs with empty string
+    data_frame = data_frame.fillna('')
+
+    # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
+    nurse_first, nurse_last = 80, 100
+    data_frame = data_frame[nurse_first:nurse_last]
+
+    # Explore the data frame
+    # print data_frame
+    print type(data_frame)
+    print data_frame.shape
+    # print data_frame["Department"]
+    # print data_frame[:10]
+    # print data_frame["Department"][:10]
+    # print data_frame[:10]["Department"]
+
+    # for key in data_frame:
+    #     print key
+    #     print type(key)
+    #     print len(key)
+
     list_of_questions = [
         "What (City, State) are you located in?",
         "What's your highest level of education?",
@@ -62,61 +88,96 @@ def main():
         "How did you hear about Project Nurse?",
         "Start Date (UTC)",
         "Submit Date (UTC)"]
-    nurse_info_list = []
-    #This will be my nurse JSON. Is a list of dictionaries. The keys are the questions (i.e. - salary?) and the values are
-    # are dictionaries where the keys are incremental indices (0,1,..) and the values are the answers to the question for each nurse.
-    for column in range(len(list_of_questions)):
-        question = list_of_questions[column]
-        df = pd.read_csv(join(dirname(__file__), '../data/projectnurse.csv'), chunksize=1)
-        nurse_info_list.append(create_nurse_json(df, column, question))
 
-    record_coll.drop()
+    questions = {
+        "education": "What's your highest level of education?",
+        "salary": "What is your hourly rate ($/hr)?",
+        "experience": "How many years of experience do you have?",
+        "department": "Department",
+        "patientNurseRatio": "What is the Nurse - Patient Ratio?"
+    }
 
     #Get a list of all of the ratio answers
-    nurse_count = 347 #get max rows so it's less brittle
-    ratio = []
-    # ratio_clean = []
-    for nurse in range(nurse_count):
-        ratio.append(nurse_info_list[6][list_of_questions[6]][nurse])
-    # print ratio
-    # # for string in ratio:
-    # #     for s in str(string).split():
-    # #         for char in s:
-    # #             if isinstance(char, float):
-    # #                 ratio_clean.append(math.floor(char))
-    # #                 break
-    # #             if char.isdigit():
-    # #                 ratio_clean.append(char)
-    # #                 break
-    for string in ratio:
-        print string, type(string)
-        if re.search(r'\d+', string):
-            if isinstance(re.search(r'\d+', string), str):
-                ratio_clean.append(int(re.search(r'\d+', string).group()))
+    nurse_count = data_frame.shape[0]
+    ratios = data_frame[questions["patientNurseRatio"]]  # all of the ratios
+    print ratios
+    print
 
+    regex_patterns = [r'(\d+)-(\d+)[:]', r'(\d+)[:]', r'(\d+)']
 
+    ratios_clean = []
+    # nurse_count = data_frame.shape[0]
+    # for nurse in range(nurse_count):
+    # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
+    for nurse in range(nurse_first, nurse_last):
+        string = ratios[nurse]
+        # print "Ratio string:", repr(string), type(string)
+        number = 0  # default value
+        # First attempt to match ratio with regular expression
+        for pattern in regex_patterns:
+            # result = re.search(pattern, string)  # only the first match
+            # if result:
+            #     print "Match found for pattern:", pattern
+            #     number = int(result.group(1))
+            #     break  # Found a match, go get the cleaned up ratio number
+            results = re.findall(pattern, string)  # all pattern matches
+            if results:
+                # print "Match found for pattern:", pattern
+                # print results
+                # Average each of the matches for this pattern
+                sum = 0.0
+                for result in results:
+                    if isinstance(result, tuple):
+                        # result = result[0]  # just use first value
+                        # Average all the number groups matched in this pattern
+                        tuple_sum = 0.0
+                        for number in result:
+                            tuple_sum += float(number)
+                        tuple_avg = tuple_sum / len(result)
+                        result = tuple_avg
+                    # print result
+                    sum += float(result)
+                avg = sum / len(results)
+                number = avg
+                break  # Found a match, go get the cleaned up ratio number
+            # else:
+            #     print "No match found for pattern:", pattern
+        else:  # Finally, after the for-loop tries all patterns
+            print "No match found for ANY patterns for string:", repr(string)
+        # Get the cleaned up ratio number
+        ratios_clean.append(number)
+        ratios[nurse] = number
+        # print
 
-        # print str(string).split()
+    print "Ratios"
+    print ratios
+
     print "Clean Ratios"
-    print "ratio length: " + str(len(ratio))
-    print "ratio_clean length: " + str(len(ratio_clean))
+    print ratios_clean
+    # print
+    # print "ratios length: " + str(len(ratios))
+    # print "ratios_clean length: " + str(len(ratios_clean))
 
     #Populate Records collection
-    nurse_count = 347 #get max rows so it's less brittle
-    for nurse in range(nurse_count):
-        education = nurse_info_list[1][list_of_questions[1]][nurse]
-        salary = nurse_info_list[7][list_of_questions[7]][nurse]
-        experience = nurse_info_list[4][list_of_questions[4]][nurse]
-        department = nurse_info_list[2][list_of_questions[2]][nurse]
-        patientNurseRatio = nurse_info_list[6][list_of_questions[6]][nurse]
+    # nurse_count = data_frame.shape[0]
+    # for nurse in range(nurse_count):
+    # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
+    for nurse in range(nurse_first, nurse_last):
+        # print nurse
+        education = data_frame[questions["education"]][nurse]
+        salary = data_frame[questions["salary"]][nurse]
+        experience = data_frame[questions["experience"]][nurse]
+        department = data_frame[questions["department"]][nurse]
+        patientNurseRatio = data_frame[questions["patientNurseRatio"]][nurse]
 
-        if type(salary) != int:
+        # TODO: write comments
+        if not isinstance(salary, int):
             salary = 20 #default, will change later
-        if type(experience) != int:
+        if not isinstance(experience, int):
             experience = 0 #default, will change later
-        if type(patientNurseRatio) != int:
+        if not isinstance(patientNurseRatio, int):
             patientNurseRatio = 0 #default, will change later
-            # col[1].column_name: col[1].value,
+
         doc = {
             "education": education,
             "salary": salary,

@@ -13,3 +13,5 @@ export default (req, res) => {
     });
   });
 };
+
+//Write route just for salaries to query

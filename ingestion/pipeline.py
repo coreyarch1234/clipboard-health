@@ -2,6 +2,7 @@ from os.path import join, dirname
 import csv
 import json
 import re
+import math
 import pandas as pd
 import numpy as np
 from pymongo import MongoClient
@@ -40,20 +41,68 @@ def create_nurse_json(csv, column, question_key):
 def main():
     client = MongoClient('mongodb://localhost:27017/')
     db = client['clipboardinterview']
-    record_coll = db['records']
+    record_coll = db['records'] #change collection to nurses
 
     #Create JSON of nurse info
-    list_of_questions = ["What (City, State) are you located in?", "What's your highest level of education?", "Department", "How's the employee turnover?", "How many years of experience do you have?", "What is/was your length of orientation/training?", "What is the Nurse - Patient Ratio?", "What is your hourly rate ($/hr)?", "What's Your Shift Length?", "Which Shift?", "Other", "Full-Time/Part-Time?", "Do you have any special skills that set you apart from other nurses? (examples: CCRN, CNOR, Special Procedures, etc.)", "Would you recommend your department to another nurse?", "How did you hear about Project Nurse?", "Start Date (UTC)", "Submit Date (UTC)"]
-    nurse_info_list = [] #This will be my nurse JSON. Is a list of dictionaries. The keys are the questions (i.e. - salary?) and the values are
+    list_of_questions = [
+        "What (City, State) are you located in?",
+        "What's your highest level of education?",
+        "Department",
+        "How's the employee turnover?",
+        "How many years of experience do you have?",
+        "What is/was your length of orientation/training?",
+        "What is the Nurse - Patient Ratio?",
+        "What is your hourly rate ($/hr)?",
+        "What's Your Shift Length?",
+        "Which Shift?",
+        "Other",
+        "Full-Time/Part-Time?",
+        "Do you have any special skills that set you apart from other nurses? (examples: CCRN, CNOR, Special Procedures, etc.)",
+        "Would you recommend your department to another nurse?",
+        "How did you hear about Project Nurse?",
+        "Start Date (UTC)",
+        "Submit Date (UTC)"]
+    nurse_info_list = []
+    #This will be my nurse JSON. Is a list of dictionaries. The keys are the questions (i.e. - salary?) and the values are
     # are dictionaries where the keys are incremental indices (0,1,..) and the values are the answers to the question for each nurse.
-    for column in range(17):
+    for column in range(len(list_of_questions)):
+        question = list_of_questions[column]
         df = pd.read_csv(join(dirname(__file__), '../data/projectnurse.csv'), chunksize=1)
-        nurse_info_list.append(create_nurse_json(df, column, list_of_questions[column]))
+        nurse_info_list.append(create_nurse_json(df, column, question))
 
     record_coll.drop()
 
+    #Get a list of all of the ratio answers
+    nurse_count = 347 #get max rows so it's less brittle
+    ratio = []
+    # ratio_clean = []
+    for nurse in range(nurse_count):
+        ratio.append(nurse_info_list[6][list_of_questions[6]][nurse])
+    # print ratio
+    # # for string in ratio:
+    # #     for s in str(string).split():
+    # #         for char in s:
+    # #             if isinstance(char, float):
+    # #                 ratio_clean.append(math.floor(char))
+    # #                 break
+    # #             if char.isdigit():
+    # #                 ratio_clean.append(char)
+    # #                 break
+    for string in ratio:
+        print string, type(string)
+        if re.search(r'\d+', string):
+            if isinstance(re.search(r'\d+', string), str):
+                ratio_clean.append(int(re.search(r'\d+', string).group()))
+
+
+
+        # print str(string).split()
+    print "Clean Ratios"
+    print "ratio length: " + str(len(ratio))
+    print "ratio_clean length: " + str(len(ratio_clean))
+
     #Populate Records collection
-    nurse_count = 347
+    nurse_count = 347 #get max rows so it's less brittle
     for nurse in range(nurse_count):
         education = nurse_info_list[1][list_of_questions[1]][nurse]
         salary = nurse_info_list[7][list_of_questions[7]][nurse]
@@ -67,7 +116,7 @@ def main():
             experience = 0 #default, will change later
         if type(patientNurseRatio) != int:
             patientNurseRatio = 0 #default, will change later
-
+            # col[1].column_name: col[1].value,
         doc = {
             "education": education,
             "salary": salary,

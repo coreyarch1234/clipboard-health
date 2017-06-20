@@ -39,7 +39,7 @@ class Nurse extends React.Component { //Use for state
         nurse_info: []
     };
     componentDidMount(){
-        axios.get('api/records')
+        axios.get('api/records') //Just query salary
         .then(resp => {
             for (var i = 0; i < resp.data.records.length; i++){
                 this.state.salaryArr.push(resp.data.records[i]["salary"])
@@ -90,10 +90,6 @@ function drawChart(arr) {
         .style("width", function(d) { return x(d) + "px"; })
         .text(function(d) { return d; });
 };
-
-// {this.state.nurse_info.map(nurse =>
-//     <Profile key={nurse._id} {...nurse} />
-// )};
 
 ReactDOM.render(
     <Nurse/>,

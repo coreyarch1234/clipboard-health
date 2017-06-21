@@ -105,7 +105,8 @@ class Nurse extends React.Component { //Use for state
     render() {
         return(
             <div className= "Nurses text-center">
-                <div className="chart">Hello</div>
+                <h1> Patient to Nurse Ratio Histogram </h1>
+                <div className="chart"></div>
             </div>
 
         );
@@ -125,18 +126,9 @@ function drawHist(arr) {
 };
 
 function drawChart(arr) {
-    var barPadding = 1;
     var x = d3.scaleLinear()
         .domain([0, d3.max(binValueArray)])
         .range([0, 100]);
-
-    console.log(x)
-    // var bar = d3.select(".chart")
-    //     .selectAll("div")
-    //     .data(arr)
-    //     .enter().append("div")
-    //     .style("width", function(d) { return x(d)*1 + "em"; })
-    //     .text(function(d) { return d; });
 
     var bar = d3.select(".chart")
         .selectAll("div")
@@ -148,29 +140,14 @@ function drawChart(arr) {
             var v = x(Number(d.value)) + "em";
             console.log(v);
             return v;
-        })
-        // .text(function(d) { return d; });
-;
-
-    // bar.selectAll("text")
-    //    .data(arr)
-    //    .enter()
-    //    .append("text")
+        });
 
     bar.append("div")
         .attr("class", "ratio")
         .text(function(d) { return d.ratio })
-        // .attr("class", "value")
-        // .text(function(d) { return d.value });
     bar.append("div")
         .attr("class", "value")
         .text(function(d) { return d.value});
-
-    // bar.append("text")
-    //       .attr("x", function(d) { return x(d) - 3; })
-    //       .attr("y", barHeight / 2)
-    //       .attr("dy", ".35em")
-    //       .text(function(d, i) { return binsArrayRatio[i]; });
 };
 
 ReactDOM.render(

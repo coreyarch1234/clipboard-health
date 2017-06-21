@@ -9,19 +9,26 @@ import {
 
 import Index from '../views/Index';
 import NotFound from '../views/NotFound';
-import Profile from './Profile';
 
 // All of our CSS
 require('../../public/css/main.scss');
 
 var d3 = require("d3");
+
+//For Ratio Histogram
+
+// This will contain the ratios of all of the patients
 var patientNurseRatioArray = [];
-var binsArrayOfRatios = [];
-var binsRatioValuePair = [];
-var binsArrayValueArray = [];
-var binArrayOfValues = [];
 
+// This will contain the bins (arrays) of ratios for the histogram.
+var binsOfRatios = [];
 
+// This will contain the bins of the frequency/count for the ratios.
+//Ex. A count of 10 nurses have the ratio of 5:1
+var binsOfCounts = [];
+
+// This will be an object (dictionary) with keys as ratios and values as counts.
+var binsOfRatiosAndCounts = [];
 
 ReactDOM.render(
   <Router>
@@ -36,59 +43,32 @@ ReactDOM.render(
 // Nurse Profile Information Page
 class Nurse extends React.Component { //Use for state
     //Constructor
-    state = { //You want to be able to update this data
-        patientNurseRatioArr: [],
-        nurse_info: []
+    state = {
+        patientNurseRatioArr: []
     };
     componentDidMount(){
-        // axios.get('api/records')
-        // .then(resp => {
-        //     for (var i = 0; i < resp.data.records.length; i++){
-        //         this.state.patientNurseRatioArr.push(resp.data.records[i]["patientNurseRatio"])
-        //     }
-        //     // console.log(this.state.patientNurseRatioArr);
-        //     patientNurseRatioArray = this.state.patientNurseRatioArr;
-        //
-        //     // sort by number of patients
-        //     patientNurseRatioArray = patientNurseRatioArray.sort(function(a, b) {
-        //       return a - b;
-        //     });
-        //
-        //     //This will create the bins for the ratio histogram. A bin of ratios, a bin for the nurse count
-        //     // for each ratio and a bin containing an object with ratio and value key.
-        //     createRatioBins();
-        //
-        //     //This will draw the histogram.
-        //     drawHist(binsRatioValuePair);
-        //     this.setState({ //Once we populate react app with nurse info, change these fields
-        //         nurse_info: resp.data.records
-        //     })
-        // })
-        // .catch(console.error);
+        // Only query for ratios.
         axios.get('api/records/ratios')
         .then(resp => {
+            for (var i = 0; i < resp.data.records.length; i++){
+                this.state.patientNurseRatioArr.push(resp.data.records[i])
+            }
+            patientNurseRatioArray = this.state.patientNurseRatioArr;
 
-            console.log(resp.data.records);
-            // for (var i = 0; i < resp.data.records.length; i++){
-            //     this.state.patientNurseRatioArr.push(resp.data.records[i]["patientNurseRatio"])
-            // }
-            // // console.log(this.state.patientNurseRatioArr);
-            // patientNurseRatioArray = this.state.patientNurseRatioArr;
-            //
-            // // sort by number of patients
-            // patientNurseRatioArray = patientNurseRatioArray.sort(function(a, b) {
-            //   return a - b;
-            // });
-            //
-            // //This will create the bins for the ratio histogram. A bin of ratios, a bin for the nurse count
-            // // for each ratio and a bin containing an object with ratio and value key.
-            // createRatioBins();
-            //
-            // //This will draw the histogram.
-            // drawHist(binsRatioValuePair);
-            // this.setState({ //Once we populate react app with nurse info, change these fields
-            //     nurse_info: resp.data.records
-            // })
+            // sort by number of patients
+            patientNurseRatioArray = sortArray(patientNurseRatioArray);
+
+            //This will update the bins for the ratio histogram. Bins for the ratios.
+            // Bins for the nurse counts.
+            // Bins for the dictionary object containing ratio, count pair.
+            binsOfRatiosAndCounts = createRatioBins();
+
+            //This will draw the histogram.
+            drawRatioHist(binsOfRatiosAndCounts);
+
+            this.setState({
+                patientNurseRatioArr: patientNurseRatioArray
+            })
         })
         .catch(console.error);
     };
@@ -102,29 +82,26 @@ class Nurse extends React.Component { //Use for state
     render() {
         return(
             <div className= "Nurses text-center">
-                <legend> Nurse to Patient Histogram </legend>
+                <legend> Nurse to Patient Histogram  </legend>
                 <legend> Yellow = Number of patients per nurse  </legend>
                 <legend> White = Number of nurses with that ratio  </legend>
-                <div className="chart"></div>
+                <div className="ratio-chart"></div>
             </div>
         );
     };
 };
 
-function drawHist(arr) {
+function drawRatioHist(arr) {
     var x = d3.scaleLinear()
-        .domain([0, d3.max(binArrayOfValues)])
+        .domain([0, d3.max(binsOfCounts)])
         .range([0, 100]);
 
-    var bar = d3.select(".chart")
+    var bar = d3.select(".ratio-chart")
         .selectAll("div")
         .data(arr)
         .enter().append("div")
         .style("width", function(d) {
-            console.log(d);
-            console.log(d.value);
             var v = x(Number(d.value)) + "em";
-            console.log(v);
             return v;
         });
 
@@ -142,18 +119,28 @@ function createRatioBins() {
     for (var i = 0; i < patientNurseRatioArray.length; i++) {
         var ratio = Math.round(patientNurseRatioArray[i]);
         if (bins[ratio] === undefined) {
-            bins[ratio] = 1
+            bins[ratio] = 1;
         } else {
-            bins[ratio] += 1
+            bins[ratio] += 1;
         }
-    }
+    };
 
     for (var key in bins) {
         var value = bins[key];
-        binsArrayOfRatios.push(key);
-        binsRatioValuePair.push({ratio: key, value: value});
-        binArrayOfValues.push(value);
-    }
+        binsOfRatios.push(key);
+        binsOfRatiosAndCounts.push({ratio: key, value: value});
+        binsOfCounts.push(value);
+    };
+    return binsOfRatiosAndCounts;
+};
+
+
+//Sort an array
+function sortArray(array){
+    array = array.sort(function(a, b) {
+      return a - b;
+    });
+    return array;
 };
 
 ReactDOM.render(

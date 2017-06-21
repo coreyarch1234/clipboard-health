@@ -7,7 +7,7 @@
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
 
 // Components
-.chart > div {
+.ratio-chart > div {
   font: 10px sans-serif;
   background-color: black;
   text-align: right;
@@ -22,11 +22,6 @@
   min-height: 6em;
 }
 
-// .chart > div:first-child{
-//     display: flex;
-//     justify-content: flex-start;
-// }
-//
 .ratio {
     display: flex;
     font-size: 1.5em;
@@ -41,8 +36,3 @@
     color: white;
     flex: 0;
 }
-//
-// .value {
-//     justify-content: flex-end;
-// }
-// Views

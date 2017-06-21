@@ -5,8 +5,9 @@ import reactApp from './views/app';
 
 const routes = (app) => {
 
-  /* example api route */
+  //Get ratios
   app.get('/api/records/ratios', require('./api/ratios'));
+
 
   reactApp(app); // set up react routes
 };

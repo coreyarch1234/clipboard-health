@@ -1,7 +1,6 @@
 import Record from '../../models/Record';
 
-
-
+//Get ratios
 export default (req, res) => {
   var ratioArr = []
   Record.find().then((records) => {

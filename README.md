@@ -351,7 +351,7 @@ class Nurse extends React.Component { //Use for state
 
 ```
 
-Axiosi, Promise based HTTP client for the browser and node.js, was used to make the get request for the ratios. This is done in the ```componentDidMount()``` function. ```drawRatioHist()``` is also called and is passed in the dictionary object of ratios and frequencies.
+Axios, Promise based HTTP client for the browser and node.js, was used to make the get request for the ratios. This is done in the ```componentDidMount()``` function. ```drawRatioHist()``` is also called and is passed in the dictionary object of ratios and frequencies.
 
 
 This project uses a variety of different technologies really well to output a visualization for the patientNurseRatio data field. With more time, histograms could have easily been made for the salaries and experience of the nurses.  

@@ -1,6 +1,6 @@
 # Clipboard Health Senior Engineer Interview Task
 
-This project involves cleaning data from a CSV filled with nurse information and visualizing the data. To accomplish this there were 4 general steps:
+This project involves cleaning data from a CSV filled with nurse information and visualizing the data. To accomplish this, there were 4 general steps:
 
 1. Implementing a python pipeline to ingest and clean the data.
 2. Loading the data into a MongoDB.
@@ -11,8 +11,8 @@ This project involves cleaning data from a CSV filled with nurse information and
 
 # Step 1 - Cleaning the data:
 
-The [nurse information](data/projectnurse.csv) is stored in a CSV. The file contains 17 questions and 347 potential
-responses (some are n/a or NaN). The data is ingested and cleaned in a [python pipeline](ingestion/pipeline.py).
+The [nurse information](data/projectnurse.csv) is stored in a CSV. The file contains 17 questions(columns) and 347 potential
+responses(rows) (some are n/a or NaN). The data is ingested and cleaned in a [python pipeline](ingestion/pipeline.py).
 
 This includes a main method:
 ```
@@ -29,10 +29,9 @@ def main():
     data_frame = data_frame.fillna('')
 
 ```
-The database is set up and the records collection is stored in ```record_coll```.  Using pandas, I created a dataframe
-and replaced all of the n/a and NaN's with an empty string, which was helpful in locating which rows did not have proper answers.
+The database is set up and the records collection is stored in ```record_coll```.  Using pandas, a dataframe was created. All of the n/a and NaN's were replaced with an empty string, which was helpful in locating which rows did not have proper answers.
 
-Next, a dictionary was used. The keys were the names of the schema attributes for the [Record Model](server/models/Record.js).
+Next, a dictionary was created. The keys were the names of the schema attributes for the [Record Model](server/models/Record.js).
 
 ```
     questions = {
@@ -44,8 +43,7 @@ Next, a dictionary was used. The keys were the names of the schema attributes fo
     }
 
 ```
-From this, finding all of the rows (responses) for each question was simple. The interested columns (questions) were the ones
-I have to clean. This includes the patientNurseRatio. Here are examples of some data entries:
+Using these keys, the rows (responses) for each question could be accessed. Some columns (questions) needed to be cleaned. This includes the patientNurseRatio. Here are examples of some data entries:
 
 Ratio 1: 3:1 days, 4:1 nights
 
@@ -68,7 +66,7 @@ averaging the ratios would represent the nurse's patient load in the most accura
 * **Range Ratio Case:** A ratio like, '4-5:1'. Using the same logic for the multiple ratio case, I figured finding the average
 was the best route. The cleaned version should store, 4.5 ((4 + 5)/2).
 
-With this in mind, here is the method to clean the ratio data:
+With this in mind, here is the method used to clean the ratio data:
 
 ```
 
@@ -131,9 +129,9 @@ def clean_patient_nurse_ratio(nurse_count, data_frame_ratios): #Return a list of
 
 ```
 
-* **Input:** Number of nurses and the ratio column of the dataframe.
+* **Input:** Number of nurses (nurse_count) and the ratio column of the dataframe (data_frame_ratios).
 
-* **Returns:** A list of clean ratio values.
+* **Returns:** A list of clean ratio values (clean_ratios).
 
 A list of regular expressions was used.
 
@@ -148,7 +146,7 @@ cleaned ratios to a list and updates the dataframe with the clean values.
 
 This method also takes care of fractional ratios that may be submitted by using Python's Fraction class.
 
-Similar, thorough cleaning methods were used for the 'salary' and 'experience' columns. Next step is to populate the database.
+Similar, thorough cleaning methods were used for the 'salary' and 'experience' columns. The next step is to populate the database.
 
 # Step 2 - Populating MongoDB:
 
@@ -212,13 +210,13 @@ export default (req, res) => {
 
 
 ```
-If finding the ratio column was successful, the ratios were pushed to a ```ratioArr`` and were included in the response.
+If finding the ratio column was successful, the ratios were pushed to a ```ratioArr``` and this was included in the response.
 
 The reason for making a query for the ratios was because the patientNurseRatio field was needed for visualization. It would be inefficient to query the whole database when only the ratios were needed for the React/D3 visualization.
 
 # Step 4 - Visualization:
 
-[A Nurse component](app/components/Nurses.js) was created that would be the entry point for the React app. The goal of this component is to produce a Histogram representing the nurse frequency of certain ratios. In other words, it represents the number of nurses that have every specific ratio.
+[A Nurse component](app/components/Nurses.js) was created that would be the entry point for the React app. The goal of this component is to produce a Histogram representing the nurse frequency of certain ratios. In other words, it represents the number of nurses that have each specific ratio.
 
 ![ScreenShot](http://i.imgur.com/LQUjEAI.png)
 
@@ -241,7 +239,7 @@ var binsOfCounts = [];
 var binsOfRatiosAndCounts = [];
 ```
 
-A ```createRatioBins()``` function returned a dictionary with the ratios as the keys and the frequency (how many nurses had that ratio) as the values. It loops through the array of the ratio values and creates the bin dictionary.
+A ```createRatioBins()``` function returned a dictionary with the ratios as the keys and the frequency (how many nurses had that ratio) as the values. This function loops through the array of the ratio values (```patientNurseRatioArray```) and creates the bin dictionary (```binsOfRatiosAndCounts```).
 
 ```
 function createRatioBins() {
@@ -267,7 +265,7 @@ function createRatioBins() {
 ```
 The ```patientNurseRatioArray``` is created once the query is made, which will be shown soon.
 
-To create the histogram itself, the  dictionary of ratio/frequency pairs was passed in as the data.
+To create the histogram itself, ```binsOfRatiosAndCounts``` was passed in as the data.
 
 ```
 function drawRatioHist(arr) {
@@ -351,7 +349,7 @@ class Nurse extends React.Component { //Use for state
 
 ```
 
-Axios, Promise based HTTP client for the browser and node.js, was used to make the get request for the ratios. This is done in the ```componentDidMount()``` function. ```drawRatioHist()``` is also called and is passed in the dictionary object of ratios and frequencies.
+Axios, a promise based HTTP client for the browser and node.js, was used to make the get request for the ratios. This is done in the ```componentDidMount()``` function. ```drawRatioHist()``` is also called and is passed in the dictionary object of ratios and frequencies.
 
 
-This project uses a variety of different technologies really well to output a visualization for the patientNurseRatio data field. With more time, histograms could have easily been made for the salaries and experience of the nurses.  
+This project uses a variety of different technologies really well to output a visualization for the patientNurseRatio data field. With more time, histograms could have easily been made for the 'salary' and 'experience' fields.  

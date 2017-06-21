@@ -3,6 +3,7 @@ import csv
 import json
 import re
 import math
+from fractions import Fraction
 import pandas as pd
 import numpy as np
 from pymongo import MongoClient
@@ -21,22 +22,143 @@ and store data in mongo. The fields we're interested in storing are:
 
 Check server/models/Record.js for an example of the schema.
 
-Subtasks:
-
-1) Use csv.DictReader to create JSON where keys are the questions and values are the answers (i.e. - {salary: 28})
-2) Exclude keys we don't need. All we need is: experience, education, salary, department, location, patientNurseRatio.
-Note that the keys will be the full questions at first, so we need to convert that to the Record.js model attribute keys
-3) Populate the Record model with the salary and patientNurseRatio fields
-
 """
-def create_nurse_json(csv, column, question_key):
-    index = 0
-    nurse_questions_dict, nurse_answers_dict = {}, {}
-    for line in csv:
-        nurse_answers_dict[index] = line.iloc[0,column]
-        index += 1
-    nurse_questions_dict[question_key] = nurse_answers_dict
-    return nurse_questions_dict
+
+# Use regular expressions to get the number of patients a nurse sees (i.e. - if 5:1, get 5)
+# for each nurse. Clean the patientNurseRatio column in CSV.
+def clean_patient_nurse_ratio(nurse_count, data_frame_ratios): #Return a list of numbers (ratios)
+    # Try out 3 Regex patterns. Get the first digit.
+    # First Pattern ex. 3-4:1 -> Will return an average of 3 and 4
+    # Second Pattern ex. 5:1 -> Will return 5
+    # Third Pattern ex. 2:1 -> Will return 2
+    regex_patterns = [r'(\d+)-(\d+)[:]', r'(\d+)[:]', r'(\d+)']
+    clean_ratios = []
+
+    for nurse in range(nurse_count):
+        nurse_answer_string = data_frame_ratios[nurse]
+        number = 0  # default ratio value
+
+        # First attempt to match ratio with regular expression
+        for pattern in regex_patterns:
+            # all matches for current pattern
+
+            # This is to check to see if a match is a ratio in fractional form
+            # (i.e. 0.0666666 == 1/15. We should get 15)
+            # We use the Fraction class to find the denominator. This is an edge case.
+            if re.findall(r'([.]\d+)', nurse_answer_string):
+                number = float(Fraction(nurse_answer_string).limit_denominator().denominator)
+                break
+
+            results = re.findall(pattern, nurse_answer_string)
+            if results:
+                # Average each of the matches for this pattern
+                sum = 0.0
+                for result in results:
+                    # The result may be a range  such as (3-4:1), which is a tuple of (3, 4)
+                    if isinstance(result, tuple):
+                        # Average all the number groups matched in this pattern
+                        tuple_sum = 0.0
+                        for number in result:
+                            tuple_sum += float(number)
+                        tuple_avg = tuple_sum / len(result)
+                        result = tuple_avg
+                    sum += float(result)
+                avg = sum / len(results)
+                number = avg
+                break  # Found a match, go get the cleaned up ratio number
+        else:  # Finally, after the for-loop tries all patterns
+            print "No match found for ANY patterns for string:"
+        # Get the cleaned up ratio number
+        clean_ratios.append(number)
+        data_frame_ratios[nurse] = number # Update ratios column in data frame as it is cleaned
+    return clean_ratios
+
+# Do similar operation for the salaries
+def clean_salaries_method(nurse_count, data_frame_salaries):
+    regex_patterns = [r'[$](\d+)[.](\d+)', r'(\d+)[.](\d+)', r'[$](\d+)', r'(\d+)']
+    clean_salaries = []
+
+    for nurse in range(nurse_count):
+        nurse_answer_string = data_frame_salaries[nurse]
+        number = 0
+
+        # First attempt to match salary with regular expression
+        for pattern in regex_patterns:
+            # all matches for current pattern
+
+            results = re.findall(pattern, nurse_answer_string)
+            if results:
+                # print pattern
+                if pattern == regex_patterns[0] or pattern == regex_patterns[1]: #for decimals (ie $25.67)
+                    for index in range(len(results)):
+                        power = len(results[index][1])
+                        results[index] = float(results[index][0]) + float(results[index][1])/float(math.pow(10,power))
+
+                # Average each of the matches for this pattern
+                sum = 0.0
+                for result in results:
+                    if isinstance(result, tuple):
+                        # Average all the number groups matched in this pattern
+                        tuple_sum = 0.0
+                        for number in result:
+                            tuple_sum += float(number)
+                        tuple_avg = tuple_sum / len(result)
+                        result = tuple_avg
+                    sum += float(result)
+                avg = sum / len(results)
+                number = avg
+                break
+        else:  # Finally, after the for-loop tries all patterns
+            print "No match found for ANY patterns for string:"
+        clean_salaries.append(number)
+        data_frame_salaries[nurse] = number # Update salaries column in data frame as it is cleaned
+    return clean_salaries
+
+# Do similar operation for the experience
+def clean_experience_method(nurse_count, data_frame_experience):
+    regex_patterns = [r'(\d+)-(\d+)', r'(\d+)[, ](\d+)', r'(\d+)[.](\d+)', r'(\d+)']
+    clean_experience = []
+
+    for nurse in range(nurse_count):
+        nurse_answer_string = data_frame_experience[nurse]
+        number = 0
+
+        # First attempt to match salary with regular expression
+        for pattern in regex_patterns:
+            # all matches for current pattern
+
+            results = re.findall(pattern, nurse_answer_string)
+            if results:
+                # print pattern
+                if pattern == regex_patterns[2]: #for decimals (i.e. 1.6)
+                    print "results for: "
+                    print nurse_answer_string
+                    for index in range(len(results)):
+                        power = len(results[index][1])
+                        results[index] = float(results[index][0]) + float(results[index][1])/float(math.pow(10,power))
+
+                # Average each of the matches for this pattern
+                sum = 0.0
+                for result in results:
+                    if isinstance(result, tuple):
+                        # Average all the number groups matched in this pattern
+                        tuple_sum = 0.0
+                        for number in result:
+                            tuple_sum += float(number)
+                        tuple_avg = tuple_sum / len(result)
+                        result = tuple_avg
+                    sum += float(result)
+                avg = sum / len(results)
+                number = avg
+                break
+        else:  # Finally, after the for-loop tries all patterns
+            print "No match found for ANY patterns for string:"
+        clean_experience.append(number)
+        data_frame_experience[nurse] = number # Update salaries column in data frame as it is cleaned
+    return clean_experience
+
+
+
 
 def main():
     # Setup the database
@@ -45,30 +167,10 @@ def main():
     record_coll = db['records'] #change collection to nurses
     record_coll.drop()
 
-    #This will be my nurse JSON. Is a list of dictionaries. The keys are the questions (i.e. - salary?) and the values are
-    # are dictionaries where the keys are incremental indices (0,1,..) and the values are the answers to the question for each nurse.
     data_frame = pd.read_csv(join(dirname(__file__), '../data/projectnurse.csv'))
 
     # Replace all NaNs with empty string
     data_frame = data_frame.fillna('')
-
-    # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
-    # nurse_first, nurse_last = 80, 100
-    # data_frame = data_frame[nurse_first:nurse_last]
-
-    # Explore the data frame
-    # print data_frame
-    # print type(data_frame)
-    # print data_frame.shape
-    # print data_frame["Department"]
-    # print data_frame[:10]
-    # print data_frame["Department"][:10]
-    # print data_frame[:10]["Department"]
-
-    # for key in data_frame:
-    #     print key
-    #     print type(key)
-    #     print len(key)
 
     list_of_questions = [
         "What (City, State) are you located in?",
@@ -97,86 +199,39 @@ def main():
         "patientNurseRatio": "What is the Nurse - Patient Ratio?"
     }
 
-    #Get a list of all of the ratio answers
+    #Number of nurses.
     nurse_count = data_frame.shape[0]
+
+    #Get a list of all of the cleaned ratio answers
     ratios = data_frame[questions["patientNurseRatio"]]  # all of the ratios
-    print ratios
-    print
+    clean_ratios = clean_patient_nurse_ratio(nurse_count, ratios)
 
-    regex_patterns = [r'(\d+)-(\d+)[:]', r'(\d+)[:]', r'(\d+)']
+    #Get a list of all of the cleaned salary answers
+    salaries = data_frame[questions["salary"]]  # all of the salaries
+    clean_salaries = clean_salaries_method(nurse_count, salaries)
 
-    ratios_clean = []
-    # nurse_count = data_frame.shape[0]
-    # for nurse in range(nurse_count):
-    # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
-    for nurse in range(nurse_count):
-        string = ratios[nurse]
-        # print "Ratio string:", repr(string), type(string)
-        number = 0  # default value
-        # First attempt to match ratio with regular expression
-        for pattern in regex_patterns:
-            # result = re.search(pattern, string)  # only the first match
-            # if result:
-            #     print "Match found for pattern:", pattern
-            #     number = int(result.group(1))
-            #     break  # Found a match, go get the cleaned up ratio number
-            results = re.findall(pattern, string)  # all pattern matches
-            if results:
-                # print "Match found for pattern:", pattern
-                # print results
-                # Average each of the matches for this pattern
-                sum = 0.0
-                for result in results:
-                    if isinstance(result, tuple):
-                        # result = result[0]  # just use first value
-                        # Average all the number groups matched in this pattern
-                        tuple_sum = 0.0
-                        for number in result:
-                            tuple_sum += float(number)
-                        tuple_avg = tuple_sum / len(result)
-                        result = tuple_avg
-                    # print result
-                    sum += float(result)
-                avg = sum / len(results)
-                number = avg
-                break  # Found a match, go get the cleaned up ratio number
-            # else:
-            #     print "No match found for pattern:", pattern
-        else:  # Finally, after the for-loop tries all patterns
-            print "No match found for ANY patterns for string:", repr(string)
-        # Get the cleaned up ratio number
-        ratios_clean.append(number)
-        ratios[nurse] = number
-        # print
+    #Get a list of all of the cleaned experience answers
+    experience = data_frame[questions["experience"]]  # all of the experience values
+    clean_experience = clean_experience_method(nurse_count, experience)
 
-    print "Ratios"
-    print ratios
 
-    print "Clean Ratios"
-    print ratios_clean
-    # print
-    # print "ratios length: " + str(len(ratios))
-    # print "ratios_clean length: " + str(len(ratios_clean))
+
 
     #Populate Records collection
-    nurse_count = data_frame.shape[0]
-    # for nurse in range(nurse_count):
-    # FIXME: TEMPORARY HACK TO DEAL WITH LESS data_frame
     for nurse in range(nurse_count):
-        # print nurse
         education = data_frame[questions["education"]][nurse]
         salary = data_frame[questions["salary"]][nurse]
         experience = data_frame[questions["experience"]][nurse]
         department = data_frame[questions["department"]][nurse]
         patientNurseRatio = data_frame[questions["patientNurseRatio"]][nurse]
 
-        # TODO: write comments
+        # If for some reason, we do not return the proper type, set a default value of 0.
         if not isinstance(salary, int):
-            salary = 0 #default, will change later
+            salary = 0 #default
         if not isinstance(experience, int):
-            experience = 0 #default, will change later
+            experience = 0 #default
         if not isinstance(patientNurseRatio, float):
-            patientNurseRatio = 0 #default, will change later
+            patientNurseRatio = 0 #default
 
         doc = {
             "education": education,
@@ -187,6 +242,6 @@ def main():
         }
 
         record_coll.insert(doc)
-
+        print data_frame
 if __name__ == "__main__":
     main()

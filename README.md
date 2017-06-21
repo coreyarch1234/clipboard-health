@@ -7,7 +7,7 @@ This project involves cleaning data from a CSV filled with nurse information and
 3. Serving the data from an Express web server as an API.
 4. Visualizing it using React and D3.
 
- * **Note:** I will be linking important files in this documentation. Feel free to click and view in a separate tab.
+ * **Note:** I will be linking important files in this documentation. Feel free to click and view in a separate tab. I will be going over the important methods and implementations.
 
 # Step 1 - Cleaning the data:
 
@@ -151,3 +151,207 @@ This method also takes care of fractional ratios that may be submitted by using 
 Similar, thorough cleaning methods were used for the 'salary' and 'experience' columns. Next step is to populate the database.
 
 # Step 2 - Populating MongoDB:
+
+This was done by looping through each nurse and creating a document for each one filled with the neccessary information.
+
+```#Populate Records collection
+    for nurse in range(nurse_count):
+        education = data_frame[questions["education"]][nurse]
+        salary = data_frame[questions["salary"]][nurse]
+        experience = data_frame[questions["experience"]][nurse]
+        department = data_frame[questions["department"]][nurse]
+        patientNurseRatio = data_frame[questions["patientNurseRatio"]][nurse]
+
+        # If for some reason, we do not return the proper type, set a default value of 0.
+        if not isinstance(salary, int):
+            salary = 0 #default
+        if not isinstance(experience, int):
+            experience = 0 #default
+        if not isinstance(patientNurseRatio, float):
+            patientNurseRatio = 0 #default
+
+        doc = {
+            "education": education,
+            "salary": salary,
+            "experience": experience,
+            "department": department,
+            "patientNurseRatio": patientNurseRatio
+        }
+
+        record_coll.insert(doc)
+```
+After each ```doc``` was created, it was inserted into the records collection. Default values were also put into place in case there was a salary, experience or patientNurseRatio value that was not the correct type.
+
+# Step 3 - Serving the data:
+
+Once the database has been populated with clean data, the queries could be created. Two queries were written. One for getting the whole database and the other for just the 'patientNurseRatio' column.
+
+[The ratio query](server/models/routes/api/ratios.js):
+
+```
+import Record from '../../models/Record';
+
+//Get ratios
+export default (req, res) => {
+  var ratioArr = []
+  Record.find().then((records) => {
+    for (var i = 0; i < records.length; i++){
+        ratioArr.push(records[i]["patientNurseRatio"])
+    }
+    res.json({
+      records: ratioArr,
+      success: true,
+    });
+  }).catch((error) => {
+    res.json({
+      error,
+      success: false,
+    });
+  });
+};
+
+
+```
+If finding the ratio column was successful, the ratios were pushed to a ```ratioArr`` and were included in the response.
+
+The reason for making a query for the ratios was because the patientNurseRatio field was needed for visualization. It would be inefficient to query the whole database when only the ratios were needed for the React/D3 visualization.
+
+# Step 4 - Visualization:
+
+[A Nurse component](app/components/Nurses.js) was created that would be the entry point for the React app. The goal of this component is to produce a Histogram representing the nurse frequency of certain ratios. In other words, it represents the number of nurses that have every specific ratio.
+
+![ScreenShot](http://i.imgur.com/LQUjEAI.png)
+
+The variables below were created to store bins (range of ratio values) for the histogram.
+
+```
+//For Ratio Histogram
+
+// This will contain the ratios of all of the patients
+var patientNurseRatioArray = [];
+
+// This will contain the bins (arrays) of ratios for the histogram.
+var binsOfRatios = [];
+
+// This will contain the bins of the frequency/count for the ratios.
+//Ex. A count of 10 nurses have the ratio of 5:1
+var binsOfCounts = [];
+
+// This will be an object (dictionary) with keys as ratios and values as counts.
+var binsOfRatiosAndCounts = [];
+```
+
+A ```createRatioBins()``` function returned a dictionary with the ratios as the keys and the frequency (how many nurses had that ratio) as the values. It loops through the array of the ratio values and creates the bin dictionary.
+
+```
+function createRatioBins() {
+    var bins = {};
+
+    for (var i = 0; i < patientNurseRatioArray.length; i++) {
+        var ratio = Math.round(patientNurseRatioArray[i]);
+        if (bins[ratio] === undefined) {
+            bins[ratio] = 1;
+        } else {
+            bins[ratio] += 1;
+        }
+    };
+
+    for (var key in bins) {
+        var value = bins[key];
+        binsOfRatios.push(key);
+        binsOfRatiosAndCounts.push({ratio: key, value: value});
+        binsOfCounts.push(value);
+    };
+    return binsOfRatiosAndCounts;
+};
+```
+The ```patientNurseRatioArray``` is created once the query is made, which will be shown soon.
+
+To create the histogram itself, the  dictionary of ratio/frequency pairs was passed in as the data.
+
+```
+function drawRatioHist(arr) {
+    var x = d3.scaleLinear()
+        .domain([0, d3.max(binsOfCounts)])
+        .range([0, 100]);
+
+    var bar = d3.select(".ratio-chart")
+        .selectAll("div")
+        .data(arr)
+        .enter().append("div")
+        .style("width", function(d) {
+            var v = x(Number(d.value)) + "em";
+            return v;
+        });
+
+    bar.append("div")
+        .attr("class", "ratio")
+        .text(function(d) { return d.ratio })
+    bar.append("div")
+        .attr("class", "value")
+        .text(function(d) { return d.value});
+};
+```
+
+The bars created were given text that represented the ratio or number of patients per nurse (yellow on the left) and the nurse frequency (on the right).
+
+Here is the Nurse Component:
+
+```
+// Nurse Profile Information Page
+class Nurse extends React.Component { //Use for state
+    //Constructor
+    state = {
+        patientNurseRatioArr: []
+    };
+    componentDidMount(){
+        // Only query for ratios.
+        axios.get('api/records/ratios')
+        .then(resp => {
+            for (var i = 0; i < resp.data.records.length; i++){
+                this.state.patientNurseRatioArr.push(resp.data.records[i])
+            }
+            patientNurseRatioArray = this.state.patientNurseRatioArr;
+
+            // sort by number of patients
+            patientNurseRatioArray = sortArray(patientNurseRatioArray);
+
+            //This will update the bins for the ratio histogram. Bins for the ratios.
+            // Bins for the nurse counts.
+            // Bins for the dictionary object containing ratio, count pair.
+            binsOfRatiosAndCounts = createRatioBins();
+
+            //This will draw the histogram.
+            drawRatioHist(binsOfRatiosAndCounts);
+
+            this.setState({
+                patientNurseRatioArr: patientNurseRatioArray
+            })
+        })
+        .catch(console.error);
+    };
+
+    shouldComponentUpdate() {
+        return false; // This prevents future re-renders of this component
+    }
+    componentWillUnmount(){
+
+    };
+    render() {
+        return(
+            <div className= "Nurses text-center">
+                <legend> Nurse to Patient Histogram  </legend>
+                <legend> Yellow = Number of patients per nurse  </legend>
+                <legend> White = Number of nurses with that ratio  </legend>
+                <div className="ratio-chart"></div>
+            </div>
+        );
+    };
+};
+
+```
+
+Axiosi, Promise based HTTP client for the browser and node.js, was used to make the get request for the ratios. This is done in the ```componentDidMount()``` function. ```drawRatioHist()``` is also called and is passed in the dictionary object of ratios and frequencies.
+
+
+This project uses a variety of different technologies really well to output a visualization for the patientNurseRatio data field. With more time, histograms could have easily been made for the salaries and experience of the nurses.  

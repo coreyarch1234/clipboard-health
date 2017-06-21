@@ -13,11 +13,14 @@ import Profile from './Profile';
 
 // All of our CSS
 require('../../public/css/main.scss');
+
 var d3 = require("d3");
 var patientNurseRatioArray = [];
-var binsArrayRatio = [];
+var binsArrayOfRatios = [];
+var binsRatioValuePair = [];
 var binsArrayValueArray = [];
-var binValueArray = [];
+var binArrayOfValues = [];
+
 
 
 ReactDOM.render(
@@ -34,69 +37,63 @@ ReactDOM.render(
 class Nurse extends React.Component { //Use for state
     //Constructor
     state = { //You want to be able to update this data
-        // education: "",
-        // salaryArr: [],
-        // experience: null,
-        // department: "",
         patientNurseRatioArr: [],
         nurse_info: []
     };
     componentDidMount(){
-        axios.get('api/records') //Just query ratio
+        // axios.get('api/records')
+        // .then(resp => {
+        //     for (var i = 0; i < resp.data.records.length; i++){
+        //         this.state.patientNurseRatioArr.push(resp.data.records[i]["patientNurseRatio"])
+        //     }
+        //     // console.log(this.state.patientNurseRatioArr);
+        //     patientNurseRatioArray = this.state.patientNurseRatioArr;
+        //
+        //     // sort by number of patients
+        //     patientNurseRatioArray = patientNurseRatioArray.sort(function(a, b) {
+        //       return a - b;
+        //     });
+        //
+        //     //This will create the bins for the ratio histogram. A bin of ratios, a bin for the nurse count
+        //     // for each ratio and a bin containing an object with ratio and value key.
+        //     createRatioBins();
+        //
+        //     //This will draw the histogram.
+        //     drawHist(binsRatioValuePair);
+        //     this.setState({ //Once we populate react app with nurse info, change these fields
+        //         nurse_info: resp.data.records
+        //     })
+        // })
+        // .catch(console.error);
+        axios.get('api/records/ratios')
         .then(resp => {
-            for (var i = 0; i < resp.data.records.length; i++){
-                this.state.patientNurseRatioArr.push(resp.data.records[i]["patientNurseRatio"])
-            }
-            // console.log(this.state.patientNurseRatioArr);
-            patientNurseRatioArray = this.state.patientNurseRatioArr;
 
-            console.log(typeof patientNurseRatioArray[0]);
-
-            // sort by number of patients
-            patientNurseRatioArray = patientNurseRatioArray.sort(function(a, b) {
-              return a - b;
-            })
-
-            var bins = {};
-            var binsArrayValue = [];
-            // var binsArrayRatio = [];
-
-            for (var i = 0; i < patientNurseRatioArray.length; i++) {
-                var ratio = Math.round(patientNurseRatioArray[i]);
-                if (bins[ratio] === undefined) {
-                    bins[ratio] = 1
-                } else {
-                    bins[ratio] += 1
-                }
-            }
-
-            for (var key in bins) {
-                var value = bins[key];
-                binsArrayRatio.push(key);
-                binsArrayValue.push({ratio: key, value: value});
-                binValueArray.push(value);
-            }
-
-            console.log(binsArrayValue);
-
-            drawChart(binsArrayValue);
-            // drawChart(patientNurseRatioArray);
-            this.setState({ //Once we populate react app with nurse info, change these fields
-                //use an ajax request
-                // education: "",
-                // salaryArr: resp.data.records[5]["salary"],
-                // experience: null,
-                // department: "",
-                // patientNurseRatio: null
-                nurse_info: resp.data.records
-            })
+            console.log(resp.data.records);
+            // for (var i = 0; i < resp.data.records.length; i++){
+            //     this.state.patientNurseRatioArr.push(resp.data.records[i]["patientNurseRatio"])
+            // }
+            // // console.log(this.state.patientNurseRatioArr);
+            // patientNurseRatioArray = this.state.patientNurseRatioArr;
+            //
+            // // sort by number of patients
+            // patientNurseRatioArray = patientNurseRatioArray.sort(function(a, b) {
+            //   return a - b;
+            // });
+            //
+            // //This will create the bins for the ratio histogram. A bin of ratios, a bin for the nurse count
+            // // for each ratio and a bin containing an object with ratio and value key.
+            // createRatioBins();
+            //
+            // //This will draw the histogram.
+            // drawHist(binsRatioValuePair);
+            // this.setState({ //Once we populate react app with nurse info, change these fields
+            //     nurse_info: resp.data.records
+            // })
         })
         .catch(console.error);
-
     };
 
     shouldComponentUpdate() {
-
         return false; // This prevents future re-renders of this component
     }
     componentWillUnmount(){
@@ -105,29 +102,18 @@ class Nurse extends React.Component { //Use for state
     render() {
         return(
             <div className= "Nurses text-center">
-                <h1> Patient to Nurse Ratio Histogram </h1>
+                <legend> Nurse to Patient Histogram </legend>
+                <legend> Yellow = Number of patients per nurse  </legend>
+                <legend> White = Number of nurses with that ratio  </legend>
                 <div className="chart"></div>
             </div>
-
         );
     };
 };
 
-//Histogram
 function drawHist(arr) {
     var x = d3.scaleLinear()
-        .rangeRound([0, 347])
-    // var bins = d3.histogram()
-        .domain(x.domain())
-        .thresholds(x.ticks(20))
-        (arr);
-    // console.log(bins)
-
-};
-
-function drawChart(arr) {
-    var x = d3.scaleLinear()
-        .domain([0, d3.max(binValueArray)])
+        .domain([0, d3.max(binArrayOfValues)])
         .range([0, 100]);
 
     var bar = d3.select(".chart")
@@ -148,6 +134,26 @@ function drawChart(arr) {
     bar.append("div")
         .attr("class", "value")
         .text(function(d) { return d.value});
+};
+
+function createRatioBins() {
+    var bins = {};
+
+    for (var i = 0; i < patientNurseRatioArray.length; i++) {
+        var ratio = Math.round(patientNurseRatioArray[i]);
+        if (bins[ratio] === undefined) {
+            bins[ratio] = 1
+        } else {
+            bins[ratio] += 1
+        }
+    }
+
+    for (var key in bins) {
+        var value = bins[key];
+        binsArrayOfRatios.push(key);
+        binsRatioValuePair.push({ratio: key, value: value});
+        binArrayOfValues.push(value);
+    }
 };
 
 ReactDOM.render(

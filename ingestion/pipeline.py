@@ -7,6 +7,7 @@ from fractions import Fraction
 import pandas as pd
 import numpy as np
 from pymongo import MongoClient
+import zerorpc
 
 """
 
@@ -243,5 +244,6 @@ def main():
 
         record_coll.insert(doc)
         print data_frame
+
 if __name__ == "__main__":
     main()

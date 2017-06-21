@@ -21,6 +21,7 @@ const database = process.env.DB_NAME || 'clipboardinterview';
 
 const app = express();
 
+
 app.use(compress());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());

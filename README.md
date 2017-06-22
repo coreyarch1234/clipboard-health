@@ -235,11 +235,11 @@ var binsOfRatios = [];
 //Ex. A count of 10 nurses have the ratio of 5:1
 var binsOfCounts = [];
 
-// This will be an object (dictionary) with keys as ratios and values as counts.
+// This will be an array of objects (dictionaries) with keys as ratios and values as counts.
 var binsOfRatiosAndCounts = [];
 ```
 
-A ```createRatioBins()``` function returned a dictionary with the ratios as the keys and the frequency (how many nurses had that ratio) as the values. This function loops through the array of the ratio values (```patientNurseRatioArray```) and creates the bin dictionary (```binsOfRatiosAndCounts```).
+A ```createRatioBins()``` function returned an array of dictionaries with the ratios as the keys and the frequency (how many nurses had that ratio) as the values. This function loops through the array of the ratio values (```patientNurseRatioArray```) and creates the bin array (```binsOfRatiosAndCounts```).
 
 ```
 function createRatioBins() {
